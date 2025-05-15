@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  backendapi:
+    build: ./backendapi
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/usersdb
+    volumes:
+      - ./backendapi:/app

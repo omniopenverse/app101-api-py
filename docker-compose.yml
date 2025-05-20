@@ -1,0 +1,24 @@
+services:
+  app101apipy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app101apipy
+    environment:
+      DATABASE_URL: postgresql://app101:password@app101postgres:5432/app101db
+    hostname: app101apipy
+    image: app101/apipy:latest
+    networks:
+      app101_shared_network: null
+    ports:
+      - mode: ingress
+        target: 5000
+        published: 5000
+        protocol: tcp
+    restart: unless-stopped
+
+networks:
+  app101_shared_network:
+    name: app101_shared_network
+    external: true
+

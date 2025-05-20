@@ -4,3 +4,4 @@ flask_migrate
 flasgger
 prometheus_flask_exporter
 psycopg2-binary
+flask-cors

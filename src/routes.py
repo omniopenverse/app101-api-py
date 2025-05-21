@@ -47,14 +47,28 @@ def get_user(name):
         return jsonify({'name': user.name, 'age': user.age, 'email': user.email})
     return jsonify({'error': 'User not found'}), 404
 
-@app.route('/user', methods=['POST'])
+@app.route('/user', methods=['POST', 'OPTIONS'])
 @swag_from({
     'parameters': [
-        {'name': 'body', 'in': 'body', 'schema': {'type': 'object', 'properties': {'name': {'type': 'string'}, 'age': {'type': 'integer'}}}}
+        {
+            'name': 'body', 'in': 'body', 'schema': {
+                'type': 'object', 'properties': {
+                    'name': {'type': 'string'},
+                    'age': {'type': 'integer'},
+                    'email': {'type': 'string'}
+                },
+                'required': ['name', 'age', 'email']
+            }
+        }
     ],
-    'responses': {201: {'description': 'User added'}}
+    'responses': {
+        201: {'description': 'User added'}
+    }
 })
 def add_user():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'CORS preflight response'}), 204
+    
     data = request.json
     user = Users(name=data['name'], age=data['age'], email=data['email'])
     db.session.add(user)

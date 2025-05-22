@@ -3,16 +3,35 @@ from app import app, db
 from models import Users
 from flasgger.utils import swag_from
 
+@app.route('/health', methods=['GET'])
+@swag_from({
+    'responses': {
+        200: {
+            'description': 'Health check',
+            'examples': {'status': 'ok'}
+        }
+    }
+})
+def health_check():
+    """
+    Health check endpoint.
+    Returns a simple JSON response to indicate the service is running.
+    """
+    return jsonify({'status': 'ok'}), 200
+
 @app.route('/users', methods=['GET'])
 @swag_from({
-    'responses': {200: {'description': 'List of users', 'schema': {'type': 'array', 'items': {'type': 'object'}}}}
+    'responses': {
+        200: {'description': 'List of users', 'schema': {'type': 'array', 'items': {'type': 'object'}}},
+        201: {'description': 'No users found'}
+    }
 })
 def get_all_users():
     users = Users.query.all()  # Query all users
     if users:
         # Convert the user objects to dictionaries and return them as JSON
-        return jsonify([{'name': user.name, 'age': user.age, 'email': user.email} for user in users])
-    return jsonify({'error': 'No users found'}), 404
+        return jsonify([{'name': user.name, 'age': user.age, 'email': user.email} for user in users]), 200
+    return jsonify({'info': 'No users found'}), 201
 
 @app.route('/user/<name>', methods=['GET'])
 @swag_from({
@@ -47,7 +66,7 @@ def get_user(name):
         return jsonify({'name': user.name, 'age': user.age, 'email': user.email})
     return jsonify({'error': 'User not found'}), 404
 
-@app.route('/user', methods=['POST', 'OPTIONS'])
+@app.route('/user', methods=['POST'])
 @swag_from({
     'parameters': [
         {
@@ -66,9 +85,6 @@ def get_user(name):
     }
 })
 def add_user():
-    if request.method == 'OPTIONS':
-        return jsonify({'message': 'CORS preflight response'}), 204
-    
     data = request.json
     user = Users(name=data['name'], age=data['age'], email=data['email'])
     db.session.add(user)

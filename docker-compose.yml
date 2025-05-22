@@ -6,6 +6,12 @@ services:
     container_name: app101apipy
     environment:
       DATABASE_URL: postgresql://app101:password@app101postgres:5432/app101db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     hostname: app101apipy
     image: app101/apipy:latest
     networks:
@@ -21,4 +27,3 @@ networks:
   app101_shared_network:
     name: app101_shared_network
     external: true
-

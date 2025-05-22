@@ -8,6 +8,9 @@ import logging
 import os
 
 app = Flask(__name__)
+
+CORS(app)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SWAGGER'] = {'title': 'User API', 'uiversion': 3}
@@ -15,7 +18,6 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 swagger = Swagger(app)
 metrics = PrometheusMetrics(app)
-
 logging.basicConfig(level=logging.INFO)
 
 from routes import *

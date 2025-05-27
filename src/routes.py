@@ -90,3 +90,41 @@ def add_user():
     db.session.add(user)
     db.session.commit()
     return jsonify({'message': 'User added'}), 201
+
+@app.route('/user/<name>', methods=['DELETE'])
+@swag_from({
+    'parameters': [
+        {
+            'name': 'name', 'in': 'path', 'type': 'string', 'required': True
+        }
+    ],
+    'responses': {
+        200: {'description': 'User deleted'},
+        404: {'description': 'User not found'}
+    }
+})
+
+def delete_user(name):
+    user = Users.query.filter_by(name=name).first()
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'message': 'User deleted'}), 200
+    return jsonify({'error': 'User not found'}), 404
+
+
+
+@app.route('/delete_all_users', methods=['DELETE'])
+@swag_from({
+    'responses': {
+        200: {'description': 'All users deleted'}
+    }
+})
+def delete_all_users():
+    """
+    Delete all users.
+    :return: JSON response indicating success or failure.
+    """
+    db.session.query(Users).delete()
+    db.session.commit()
+    return jsonify({'message': 'All users deleted'}), 200

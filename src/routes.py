@@ -30,7 +30,12 @@ def get_all_users():
     users = Users.query.all()  # Query all users
     if users:
         # Convert the user objects to dictionaries and return them as JSON
-        return jsonify([{'name': user.name, 'age': user.age, 'email': user.email} for user in users]), 200
+        return jsonify([{
+                         'name': user.name,
+                         'age': user.age,
+                         'email': user.email
+                        } for user in users
+                    ]), 200
     return jsonify({'info': 'No users found'}), 201
 
 @app.route('/user/<name>', methods=['GET'])
@@ -63,7 +68,11 @@ def get_all_users():
 def get_user(name):
     user = Users.query.filter_by(name=name).first()
     if user:
-        return jsonify({'name': user.name, 'age': user.age, 'email': user.email})
+        return jsonify({
+            'name': user.name,
+            'age': user.age,
+            'email': user.email
+            })
     return jsonify({'error': 'User not found'}), 404
 
 @app.route('/user', methods=['POST'])
@@ -86,16 +95,21 @@ def get_user(name):
 })
 def add_user():
     data = request.json
-    user = Users(name=data['name'], age=data['age'], email=data['email'])
+    user = Users(
+        name=data['name'],
+        age=data['age'],
+        email=data['email']
+        )
     db.session.add(user)
     db.session.commit()
     return jsonify({'message': 'User added'}), 201
 
-@app.route('/user/<name>', methods=['DELETE'])
+
+@app.route('/user/<email>', methods=['DELETE'])
 @swag_from({
     'parameters': [
         {
-            'name': 'name', 'in': 'path', 'type': 'string', 'required': True
+            'email': 'email', 'in': 'path', 'type': 'string', 'required': True
         }
     ],
     'responses': {
@@ -104,8 +118,8 @@ def add_user():
     }
 })
 
-def delete_user(name):
-    user = Users.query.filter_by(name=name).first()
+def delete_user(email):
+    user = Users.query.filter_by(email=email).first()
     if user:
         db.session.delete(user)
         db.session.commit()
@@ -114,17 +128,17 @@ def delete_user(name):
 
 
 
-@app.route('/delete_all_users', methods=['DELETE'])
-@swag_from({
-    'responses': {
-        200: {'description': 'All users deleted'}
-    }
-})
-def delete_all_users():
-    """
-    Delete all users.
-    :return: JSON response indicating success or failure.
-    """
-    db.session.query(Users).delete()
-    db.session.commit()
-    return jsonify({'message': 'All users deleted'}), 200
+# @app.route('/delete_all_users', methods=['DELETE'])
+# @swag_from({
+#     'responses': {
+#         200: {'description': 'All users deleted'}
+#     }
+# })
+# def delete_all_users():
+#     """
+#     Delete all users.
+#     :return: JSON response indicating success or failure.
+#     """
+#     db.session.query(Users).delete()
+#     db.session.commit()
+#     return jsonify({'message': 'All users deleted'}), 200

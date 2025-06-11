@@ -1,7 +1,8 @@
-flask
-flask_sqlalchemy
-flask_migrate
-flasgger
-prometheus_flask_exporter
-psycopg2-binary
-flask-cors
+flask==3.1.1
+flask_sqlalchemy==3.1.1
+flask_migrate==4.1.0
+flasgger==0.9.7.1
+prometheus_flask_exporter==0.23.2
+psycopg2-binary==2.9.10
+flask-cors==6.0.0
+pytest==8.4.0

@@ -104,12 +104,14 @@ def add_user():
     db.session.commit()
     return jsonify({'message': 'User added'}), 201
 
-
 @app.route('/user/<email>', methods=['DELETE'])
 @swag_from({
     'parameters': [
         {
-            'email': 'email', 'in': 'path', 'type': 'string', 'required': True
+            'name': 'email', 'in': 'path', 'schema': {
+            'type': 'string'},
+            'required': True,
+            'description': 'Email of the user to delete'
         }
     ],
     'responses': {
@@ -117,7 +119,6 @@ def add_user():
         404: {'description': 'User not found'}
     }
 })
-
 def delete_user(email):
     user = Users.query.filter_by(email=email).first()
     if user:
@@ -125,8 +126,6 @@ def delete_user(email):
         db.session.commit()
         return jsonify({'message': 'User deleted'}), 200
     return jsonify({'error': 'User not found'}), 404
-
-
 
 # @app.route('/delete_all_users', methods=['DELETE'])
 # @swag_from({

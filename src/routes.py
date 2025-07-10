@@ -2,6 +2,27 @@ from flask import request, jsonify
 from app import app, db
 from models import Users
 from flasgger.utils import swag_from
+import logging
+import json
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            'level': record.levelname,
+            'logger': record.name,
+            'message': record.getMessage(),
+            'time': self.formatTime(record, self.datefmt),
+        }
+        return json.dumps(log_record)
+
+# Set JSON formatter for this module's logger
+logger = logging.getLogger(__name__)
+for handler in logger.handlers:
+    handler.setFormatter(JsonFormatter())
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(JsonFormatter())
+    logger.addHandler(handler)
 
 @app.route('/health', methods=['GET'])
 @swag_from({
@@ -17,6 +38,7 @@ def health_check():
     Health check endpoint.
     Returns a simple JSON response to indicate the service is running.
     """
+    logger.info(json.dumps({'event': 'health_check', 'endpoint': '/health'}))
     return jsonify({'status': 'ok'}), 200
 
 @app.route('/users', methods=['GET'])
@@ -27,15 +49,17 @@ def health_check():
     }
 })
 def get_all_users():
+    logger.info(json.dumps({'event': 'get_all_users', 'endpoint': '/users'}))
     users = Users.query.all()  # Query all users
     if users:
-        # Convert the user objects to dictionaries and return them as JSON
+        logger.info(json.dumps({'event': 'users_found', 'count': len(users)}))
         return jsonify([{
                          'name': user.name,
                          'age': user.age,
                          'email': user.email
                         } for user in users
                     ]), 200
+    logger.info(json.dumps({'event': 'no_users_found'}))
     return jsonify({'info': 'No users found'}), 201
 
 @app.route('/user/<name>', methods=['GET'])
@@ -66,13 +90,16 @@ def get_all_users():
     ]
 })
 def get_user(name):
+    logger.info(json.dumps({'event': 'get_user', 'endpoint': '/user/<name>', 'name': name}))
     user = Users.query.filter_by(name=name).first()
     if user:
+        logger.info(json.dumps({'event': 'user_found', 'name': user.name, 'email': user.email}))
         return jsonify({
             'name': user.name,
             'age': user.age,
             'email': user.email
             })
+    logger.warning(json.dumps({'event': 'user_not_found', 'name': name}))
     return jsonify({'error': 'User not found'}), 404
 
 @app.route('/user', methods=['POST'])
@@ -95,6 +122,7 @@ def get_user(name):
 })
 def add_user():
     data = request.json
+    logger.info(json.dumps({'event': 'add_user', 'endpoint': '/user', 'data': data}))
     user = Users(
         name=data['name'],
         age=data['age'],
@@ -102,6 +130,7 @@ def add_user():
         )
     db.session.add(user)
     db.session.commit()
+    logger.info(json.dumps({'event': 'user_added', 'name': user.name, 'email': user.email}))
     return jsonify({'message': 'User added'}), 201
 
 @app.route('/user/<email>', methods=['DELETE'])
@@ -120,11 +149,14 @@ def add_user():
     }
 })
 def delete_user(email):
+    logger.info(json.dumps({'event': 'delete_user', 'endpoint': '/user/<email>', 'email': email}))
     user = Users.query.filter_by(email=email).first()
     if user:
         db.session.delete(user)
         db.session.commit()
+        logger.info(json.dumps({'event': 'user_deleted', 'email': email}))
         return jsonify({'message': 'User deleted'}), 200
+    logger.warning(json.dumps({'event': 'user_not_found_for_deletion', 'email': email}))
     return jsonify({'error': 'User not found'}), 404
 
 # @app.route('/delete_all_users', methods=['DELETE'])

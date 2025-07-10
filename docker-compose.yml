@@ -6,6 +6,7 @@ services:
     container_name: app101apipy
     environment:
       APP_ENV: local
+      APP101_LOG_FILE: /var/log/app101/app.log
       # SQLALCHEMY_DATABASE_URI: postgresql://app101:password@app101postgres:5432/app101db
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]

@@ -8,6 +8,19 @@ import os
 from config import config_by_env
 from extensions import db, migrate
 
+# Ensure log dir exists
+LOG_FILE = os.getenv("APP101_LOG_FILE", "/var/log/app101/app.log")
+os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+
+# Configure logging to file
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+file_handler = logging.FileHandler(LOG_FILE)
+formatter = logging.Formatter('%(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
 env = os.getenv("APP_ENV", "local")
 app = Flask(__name__)
 app.config.from_object(config_by_env[env])

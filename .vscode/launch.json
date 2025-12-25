@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Run app.py",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/app.py",
+      "cwd": "${workspaceFolder}/src",
+      "console": "integratedTerminal",
+      "env": {
+        "APP101_LOG_FILE": "${workspaceFolder}/local/log.txt",
+        "APP_ENV": "local",
+        "FLASK_APP": "app.py",
+        "FLASK_ENV": "development"
+      },
+      "args": []
+    },
+  ]
+}

@@ -24,6 +24,8 @@ if not logger.handlers:
     handler.setFormatter(JsonFormatter())
     logger.addHandler(handler)
 
+
+# Health Check Endpoint ...
 @app.route('/health', methods=['GET'])
 @swag_from({
     'responses': {
@@ -33,6 +35,7 @@ if not logger.handlers:
         }
     }
 })
+
 def health_check():
     """
     Health check endpoint.
@@ -41,6 +44,7 @@ def health_check():
     logger.info(json.dumps({'event': 'health_check', 'endpoint': '/health'}))
     return jsonify({'status': 'ok'}), 200
 
+# Get All Users Endpoint ...
 @app.route('/users', methods=['GET'])
 @swag_from({
     'responses': {
@@ -48,6 +52,7 @@ def health_check():
         201: {'description': 'No users found'}
     }
 })
+
 def get_all_users():
     logger.info(json.dumps({'event': 'get_all_users', 'endpoint': '/users'}))
     users = Users.query.all()  # Query all users
@@ -62,6 +67,7 @@ def get_all_users():
     logger.info(json.dumps({'event': 'no_users_found'}))
     return jsonify({'info': 'No users found'}), 201
 
+# Get User by Name Endpoint ...
 @app.route('/user/<name>', methods=['GET'])
 @swag_from({
     'responses': {
@@ -102,6 +108,7 @@ def get_user(name):
     logger.warning(json.dumps({'event': 'user_not_found', 'name': name}))
     return jsonify({'error': 'User not found'}), 404
 
+# Add New User Endpoint ...
 @app.route('/user', methods=['POST'])
 @swag_from({
     'parameters': [
@@ -120,6 +127,7 @@ def get_user(name):
         201: {'description': 'User added'}
     }
 })
+
 def add_user():
     data = request.json
     logger.info(json.dumps({'event': 'add_user', 'endpoint': '/user', 'data': data}))
@@ -133,6 +141,7 @@ def add_user():
     logger.info(json.dumps({'event': 'user_added', 'name': user.name, 'email': user.email}))
     return jsonify({'message': 'User added'}), 201
 
+# Delete User by Email Endpoint ...
 @app.route('/user/<email>', methods=['DELETE'])
 @swag_from({
     'parameters': [
@@ -148,6 +157,7 @@ def add_user():
         404: {'description': 'User not found'}
     }
 })
+
 def delete_user(email):
     logger.info(json.dumps({'event': 'delete_user', 'endpoint': '/user/<email>', 'email': email}))
     user = Users.query.filter_by(email=email).first()
@@ -159,17 +169,42 @@ def delete_user(email):
     logger.warning(json.dumps({'event': 'user_not_found_for_deletion', 'email': email}))
     return jsonify({'error': 'User not found'}), 404
 
-# @app.route('/delete_all_users', methods=['DELETE'])
-# @swag_from({
-#     'responses': {
-#         200: {'description': 'All users deleted'}
-#     }
-# })
-# def delete_all_users():
-#     """
-#     Delete all users.
-#     :return: JSON response indicating success or failure.
-#     """
-#     db.session.query(Users).delete()
-#     db.session.commit()
-#     return jsonify({'message': 'All users deleted'}), 200
+# Edit User by Email Endpoint ...
+@app.route('/user/<email>', methods=['PUT'])
+@swag_from({
+    'parameters': [
+        {
+            'name': 'email', 'in': 'path', 'schema': {
+            'type': 'string'},
+            'required': True,
+            'description': 'Email of the user to edit'
+        },
+        {
+            'name': 'body', 'in': 'body', 'schema': {
+                'type': 'object', 'properties': {
+                    'name': {'type': 'string'},
+                    'age': {'type': 'integer'},
+                    'email': {'type': 'string'}
+                }
+            }
+        }
+    ],
+    'responses': {
+        200: {'description': 'User updated'},
+        404: {'description': 'User not found'}
+    }
+})
+def edit_user(email):
+    data = request.json
+    logger.info(json.dumps({'event': 'edit_user', 'endpoint': '/user/<email>', 'email': email, 'data': data}))
+    user = Users.query.filter_by(email=email).first()
+    if user:
+        user.name = data.get('name', user.name)
+        user.age = data.get('age', user.age)
+        user.email = data.get('email', user.email)
+        db.session.commit()
+        logger.info(json.dumps({'event': 'user_updated', 'email': email}))
+        return jsonify({'message': 'User updated'}), 200
+    logger.warning(json.dumps({'event': 'user_not_found_for_update', 'email': email}))
+    return jsonify({'error': 'User not found'}), 404
+

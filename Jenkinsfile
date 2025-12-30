@@ -1,5 +1,5 @@
 pipeline {
-  agent none
+  agent any
 
   options {
     timestamps()
@@ -22,9 +22,10 @@ pipeline {
     // DOCKER_TLS_CERTDIR = ''
 
     // Python build behavior
-    PIP_DISABLE_PIP_VERSION_CHECK = '1'
-    PYTHONDONTWRITEBYTECODE = '1'
-    PYTHONUNBUFFERED = '1'
+    // PIP_DISABLE_PIP_VERSION_CHECK = '1'
+    // PYTHONDONTWRITEBYTECODE = '1'
+    // PYTHONUNBUFFERED = '1'
+    IMAGE_REPO = "${params.DOCKERHUB_NAMESPACE}/${params.IMAGE_NAME}"
   }
 
   stages {
@@ -53,7 +54,7 @@ pipeline {
       agent {
         docker {
           image 'python:3.12-slim'
-          args '-u root:root' // needed to apt-get if required
+          args '--user root:root' // needed to apt-get if required
           reuseNode true
         }
       }
@@ -96,7 +97,7 @@ pipeline {
       agent {
         docker {
           image 'docker:27.4-cli'
-          args '-u root:root'
+          args '--user root:root'
           reuseNode true
         }
       }

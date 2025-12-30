@@ -98,13 +98,13 @@ pipeline {
     }
 
     stage('Docker Build & Push') {
-      // agent {
-      //   docker {
-      //     image 'docker:27.4-cli'
-      //     args '--user root:root'
-      //     reuseNode true
-      //   }
-      // }
+      agent {
+        docker {
+          image 'app101/jenkins-agent:latest'
+          args '--user 1000:1000'
+          reuseNode true
+        }
+      }
       // when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
       environment {
         // helps some environments that need HOME writable

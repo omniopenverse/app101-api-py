@@ -101,7 +101,7 @@ pipeline {
       agent {
         docker {
           image 'app101/jenkins-agent:latest'
-          args '--user 1000:1000'
+          args '--user root:root --privileged' // --privileged may be needed for DinD
           reuseNode true
         }
       }
@@ -112,7 +112,6 @@ pipeline {
       }
       steps {
         unstash 'srcs'
-        sh 'chown -R 1000:1000 "$WORKSPACE"'
         // unstash 'dist'
 
         script {

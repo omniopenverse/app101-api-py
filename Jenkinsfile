@@ -7,7 +7,7 @@ pipeline {
     disableConcurrentBuilds()
     timeout(time: 30, unit: 'MINUTES')
     buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '30'))
-    skipDefaultCheckout(true)
+    // skipDefaultCheckout(true)
     preserveStashes(buildCount: 10)
   }
 
@@ -46,7 +46,7 @@ pipeline {
         }
 
         // Stash source for later containerized stages
-        stash name: 'src', includes: '**/*', useDefaultExcludes: false
+        // stash name: 'src', includes: '**/*', useDefaultExcludes: false
       }
     }
 
@@ -59,7 +59,7 @@ pipeline {
         }
       }
       steps {
-        unstash 'src'
+        // unstash 'src'
 
         sh '''
           set -euo pipefail
@@ -108,7 +108,7 @@ pipeline {
         HOME = "${WORKSPACE}"
       }
       steps {
-        unstash 'src'
+        // unstash 'src'
         unstash 'dist'
 
         script {

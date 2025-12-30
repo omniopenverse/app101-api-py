@@ -98,15 +98,16 @@ pipeline {
     }
 
     stage('Docker Build & Push') {
-      agent {
-        docker {
-          image 'app101/jenkins-agent:latest'
-          // Provide Docker daemon connectivity to dind over TLS and ensure network reachability
-          // Join the same Docker network as compose services so hostname "dind" resolves
-          args '--user root:root --privileged -e DOCKER_HOST=tcp://dind:2376 -e DOCKER_TLS_VERIFY=1 -e DOCKER_CERT_PATH=/certs/client -v /certs:/certs:ro'
-          reuseNode true
-        }
-      }
+      // agent {
+      //   docker {
+      //     image 'app101/jenkins-agent:latest'
+      //     // Provide Docker daemon connectivity to dind over TLS and ensure network reachability
+      //     // Join the same Docker network as compose services so hostname "dind" resolves
+      //     args '--user root:root --privileged -e DOCKER_HOST=tcp://dind:2376 -e DOCKER_TLS_VERIFY=1 -e DOCKER_CERT_PATH=/certs/client -v /certs:/certs:ro'
+      //     reuseNode true
+      //   }
+      // }
+      agent any
       // when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
       environment {
         // helps some environments that need HOME writable

@@ -82,8 +82,11 @@ pipeline {
         // Archive built python packages in Jenkins
         archiveArtifacts artifacts: 'dist/*', fingerprint: true, onlyIfSuccessful: true
 
-        // Stash dist artifacts for image build stage (optional, but useful)
-        stash name: 'dist', includes: 'dist/*', allowEmpty: true
+        // // Stash dist artifacts for image build stage (optional, but useful)
+        // stash name: 'dist', includes: 'dist/*', allowEmpty: true
+
+        // Stash source for later containerized stages
+        stash name: 'srcs', includes: '**/*', useDefaultExcludes: false
       }
       post {
         always {
@@ -108,8 +111,8 @@ pipeline {
         HOME = "${WORKSPACE}"
       }
       steps {
-        unstash 'src'
-        unstash 'dist'
+        unstash 'srcs'
+        // unstash 'dist'
 
         script {
           // Tag strategy:
@@ -142,6 +145,7 @@ pipeline {
             hostname || true
             cat /etc/os-release || true
             id || true
+            ls -la || true
 
             echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 

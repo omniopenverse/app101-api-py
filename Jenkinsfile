@@ -95,13 +95,14 @@ pipeline {
     }
 
     stage('Docker Build & Push') {
-      agent {
-        docker {
-          image 'docker:27.4-cli'
-          args '--user root:root'
-          reuseNode true
-        }
-      }
+      // agent {
+      //   docker {
+      //     image 'docker:27.4-cli'
+      //     args '--user root:root'
+      //     reuseNode true
+      //   }
+      // }
+      when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
       environment {
         // helps some environments that need HOME writable
         HOME = "${WORKSPACE}"

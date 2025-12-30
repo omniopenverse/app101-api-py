@@ -72,8 +72,9 @@ pipeline {
           make ci
 
           # Build Python package artifacts (wheel + sdist)
-          ./.venv/bin/python -m pip install --upgrade build
-          ./.venv/bin/python -m build
+          #./.venv/bin/python -m pip install --upgrade build
+          #./.venv/bin/python -m build
+          make package
 
           ls -la dist || true
         '''

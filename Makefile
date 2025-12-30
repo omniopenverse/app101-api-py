@@ -58,6 +58,11 @@ bandit: ## Run bandit static analysis on source code
 	@echo "[bandit] Running bandit (static analysis)"
 	@$(VENV_DIR)/bin/python -m bandit -r src || true
 
+package:
+	@cp -r src dist/
+	@find dist/ -type d -name "__pycache__" -exec rm -rf {} +
+	@rm -rf dist/db.sqlite3 || true
+
 sci: pip-audit safety bandit ## Security checks: dependencies & code (pip-audit, safety, bandit)
 
 # ci: pre-install install lint test coverage sci ## Run lint, test, coverage and sci (for CI pipelines)

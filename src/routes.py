@@ -24,7 +24,6 @@ if not logger.handlers:
     handler.setFormatter(JsonFormatter())
     logger.addHandler(handler)
 
-
 # Health Check Endpoint ...
 @app.route('/health', methods=['GET'])
 @swag_from({
@@ -35,7 +34,6 @@ if not logger.handlers:
         }
     }
 })
-
 def health_check():
     """
     Health check endpoint.
@@ -52,7 +50,6 @@ def health_check():
         201: {'description': 'No users found'}
     }
 })
-
 def get_all_users():
     logger.info(json.dumps({'event': 'get_all_users', 'endpoint': '/users'}))
     users = Users.query.all()  # Query all users
@@ -127,7 +124,6 @@ def get_user(name):
         201: {'description': 'User added'}
     }
 })
-
 def add_user():
     data = request.json
     logger.info(json.dumps({'event': 'add_user', 'endpoint': '/user', 'data': data}))
@@ -157,7 +153,6 @@ def add_user():
         404: {'description': 'User not found'}
     }
 })
-
 def delete_user(email):
     logger.info(json.dumps({'event': 'delete_user', 'endpoint': '/user/<email>', 'email': email}))
     user = Users.query.filter_by(email=email).first()

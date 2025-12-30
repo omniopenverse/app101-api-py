@@ -1,0 +1,10 @@
+# Development dependencies
+# Keep versions loose initially; pin if CI flakiness appears
+pytest=>8.4.0
+coverage=>7.13.1
+ruff=>0.14.10
+black=>25.12.0
+mypy=>1.19.1
+bandit=>1.9.2
+safety=>3.7.0
+pip-audit=>2.10.0

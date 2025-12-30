@@ -20,33 +20,22 @@ pipeline {
     // DinD daemon (your docker:dind service should be named "docker")
     // DOCKER_HOST = 'tcp://dind:2375'
     // DOCKER_TLS_CERTDIR = ''
-
-    // Python build behavior
-    // PIP_DISABLE_PIP_VERSION_CHECK = '1'
-    // PYTHONDONTWRITEBYTECODE = '1'
-    // PYTHONUNBUFFERED = '1'
     IMAGE_REPO = "${params.DOCKERHUB_NAMESPACE}/${params.IMAGE_NAME}"
   }
 
   stages {
     stage('Checkout') {
-      agent { label 'built-in' } // or any label that has workspace; change if needed
+      agent any
       steps {
         checkout scm
         script {
-          // Metadata we will reuse
           env.GIT_SHA_SHORT = sh(script: "git rev-parse --short=12 HEAD", returnStdout: true).trim()
           env.GIT_BRANCH_SAFE = (env.BRANCH_NAME ?: "detached").replaceAll(/[^A-Za-z0-9._-]/, '-')
-
-          // Tag name if this build is on an exact tag
           env.GIT_TAG = sh(script: "git describe --tags --exact-match 2>/dev/null || true", returnStdout: true).trim()
-
-          // Image repo
           env.IMAGE_REPO = "${params.DOCKERHUB_NAMESPACE}/${params.IMAGE_NAME}"
         }
 
-        // Stash source for later containerized stages
-        stash name: 'src', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
+        stash name: 'src_files', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
       }
     }
 
@@ -54,39 +43,56 @@ pipeline {
       agent {
         docker {
           image 'app101/jenkins-python-agent:latest'
-          args '--user 1000:1000'
+          args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
           reuseNode true
         }
       }
-      steps {
-        checkout scm
-
-        sh '''
-          set -euo pipefail
-
-          hostname || true
-          cat /etc/os-release || true
-          id || true
-
-          # Run your Makefile CI (creates .venv and runs lint/test/coverage + security checks)
-          make ci
-
-          # Build Python package artifacts (wheel + sdist)
-          #./.venv/bin/python -m pip install --upgrade build
-          #./.venv/bin/python -m build
-          make package
-
-          ls -la dist || true
-        '''
-
-        // Archive built python packages in Jenkins
-        archiveArtifacts artifacts: 'dist/*', fingerprint: true, onlyIfSuccessful: true
-
-        // // Stash dist artifacts for image build stage (optional, but useful)
-        // stash name: 'dist', includes: 'dist/*', allowEmpty: true
-
-        // Stash source for later containerized stages
-        stash name: 'srcs', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
+      unstash 'src_files'
+      stages {
+        stage('Install') {
+          steps {
+            sh '''
+              set -euo pipefail
+              make pre-install
+              make install
+            '''
+          }
+        }
+        stage('test') {
+          steps {
+            sh '''
+              set -euo pipefail
+              make test
+            '''
+          }
+        }
+        // stage('lint') {
+        //   steps {
+        //     sh '''
+        //       set -euo pipefail
+        //       make lint
+        //     '''
+        //   }
+        // }
+        stage('coverage') {
+          steps {
+            sh '''
+              set -euo pipefail
+              make coverage
+              make coverage-html
+            '''
+          }
+        }
+        // stage('Package & Stash') {
+        //   steps {
+        //     // Archive built python packages in Jenkins
+        //     archiveArtifacts artifacts: 'dist/*', fingerprint: true, onlyIfSuccessful: true
+        //     // // Stash dist artifacts for image build stage (optional, but useful)
+        //     // stash name: 'dist', includes: 'dist/*', allowEmpty: true
+        //     // Stash source for later containerized stages
+        //     stash name: 'srcs', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
+        //   }
+        // }
       }
       post {
         always {
@@ -107,7 +113,7 @@ pipeline {
       //     reuseNode true
       //   }
       // }
-      agent any
+      agent { label 'docker' }
       // when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
       environment {
         // helps some environments that need HOME writable

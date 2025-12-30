@@ -46,27 +46,23 @@ pipeline {
         }
 
         // Stash source for later containerized stages
-        // stash name: 'src', includes: '**/*', useDefaultExcludes: false
+        stash name: 'src', includes: '**/*', useDefaultExcludes: false
       }
     }
 
     stage('CI: lint/test/coverage/security') {
       agent {
         docker {
-          image 'python:3.12-slim'
-          args '--user root:root' // needed to apt-get if required
+          image 'app101/jenkins-python-agent:latest'
+          // args '--user 1000:1000'
           reuseNode true
         }
       }
       steps {
-        // unstash 'src'
+        unstash 'src'
 
         sh '''
           set -euo pipefail
-
-          apt-get update -y
-          apt-get install -y --no-install-recommends make git ca-certificates
-          rm -rf /var/lib/apt/lists/*
 
           # Run your Makefile CI (creates .venv and runs lint/test/coverage + security checks)
           make ci
@@ -108,7 +104,7 @@ pipeline {
         HOME = "${WORKSPACE}"
       }
       steps {
-        // unstash 'src'
+        unstash 'src'
         unstash 'dist'
 
         script {
@@ -138,6 +134,10 @@ pipeline {
           )]) {
           sh '''
             set -euo pipefail
+
+            hostname || true
+            cat /etc/os-release || true
+            id || true
 
             echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 

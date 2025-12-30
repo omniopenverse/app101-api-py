@@ -46,7 +46,7 @@ pipeline {
         }
 
         // Stash source for later containerized stages
-        stash name: 'src', includes: '**/*', useDefaultExcludes: false
+        stash name: 'src', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
       }
     }
 
@@ -86,7 +86,7 @@ pipeline {
         // stash name: 'dist', includes: 'dist/*', allowEmpty: true
 
         // Stash source for later containerized stages
-        stash name: 'srcs', includes: '**/*', useDefaultExcludes: false
+        stash name: 'srcs', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
       }
       post {
         always {
@@ -101,7 +101,7 @@ pipeline {
       agent {
         docker {
           image 'app101/jenkins-agent:latest'
-          args '--user root:root --privileged' // --privileged may be needed for DinD
+          // args '--user root:root --privileged'
           reuseNode true
         }
       }

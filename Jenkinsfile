@@ -140,36 +140,38 @@ pipeline {
             passwordVariable: 'DH_PASS'
           )]) {
           sh '''
-            set -euo pipefail
+            bash -lc '
+              set -euo pipefail
 
-            hostname || true
-            cat /etc/os-release || true
-            id || true
-            ls -la || true
+              hostname || true
+              cat /etc/os-release || true
+              id || true
+              ls -la || true
 
-            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+              echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 
-            # Build once, tag many
-            docker build \
-              --pull \
-              --label "org.opencontainers.image.revision=${GIT_SHA_SHORT}" \
-              --label "org.opencontainers.image.source=${GIT_URL:-unknown}" \
-              -t "${IMAGE_REPO}:sha-${GIT_SHA_SHORT}" \
-              .
+              # Build once, tag many
+              docker build \
+                --pull \
+                --label "org.opencontainers.image.revision=${GIT_SHA_SHORT}" \
+                --label "org.opencontainers.image.source=${GIT_URL:-unknown}" \
+                -t "${IMAGE_REPO}:sha-${GIT_SHA_SHORT}" \
+                .
 
-            IFS=',' read -r -a TAG_ARR <<< "${IMAGE_TAGS}"
-            for t in "${TAG_ARR[@]}"; do
-              if [ "$t" != "sha-${GIT_SHA_SHORT}" ]; then
-                docker tag "${IMAGE_REPO}:sha-${GIT_SHA_SHORT}" "${IMAGE_REPO}:$t"
-              fi
-            done
+              IFS="," read -r -a TAG_ARR <<< "${IMAGE_TAGS}"
+              for t in "${TAG_ARR[@]}"; do
+                if [ "$t" != "sha-${GIT_SHA_SHORT}" ]; then
+                  docker tag "${IMAGE_REPO}:sha-${GIT_SHA_SHORT}" "${IMAGE_REPO}:$t"
+                fi
+              done
 
-            # Push
-            for t in "${TAG_ARR[@]}"; do
-              docker push "${IMAGE_REPO}:$t"
-            done
+              # Push
+              for t in "${TAG_ARR[@]}"; do
+                docker push "${IMAGE_REPO}:$t"
+              done
 
-            docker logout
+              docker logout
+            '
           '''
         }
       }

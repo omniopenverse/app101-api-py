@@ -112,6 +112,7 @@ pipeline {
       }
       steps {
         unstash 'srcs'
+        sh 'chown -R 1000:1000 "$WORKSPACE"'
         // unstash 'dist'
 
         script {

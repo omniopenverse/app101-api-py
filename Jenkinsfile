@@ -101,7 +101,8 @@ pipeline {
       agent {
         docker {
           image 'app101/jenkins-agent:latest'
-          // args '--user root:root --privileged'
+          // Provide Docker daemon connectivity to dind over TLS
+          args '--user root:root --privileged -e DOCKER_HOST=tcp://dind:2376 -e DOCKER_TLS_VERIFY=1 -e DOCKER_CERT_PATH=/certs/client -v /certs:/certs:ro'
           reuseNode true
         }
       }
@@ -147,6 +148,10 @@ pipeline {
               cat /etc/os-release || true
               id || true
               ls -la || true
+
+              echo "DOCKER_HOST=${DOCKER_HOST:-}"
+              echo "DOCKER_CERT_PATH=${DOCKER_CERT_PATH:-}"
+              docker info || true
 
               echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 

@@ -59,7 +59,7 @@ pipeline {
         }
       }
       steps {
-        unstash 'src'
+        checkout scm
 
         sh '''
           set -euo pipefail

@@ -102,7 +102,7 @@ pipeline {
       //     reuseNode true
       //   }
       // }
-      when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
+      // when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
       environment {
         // helps some environments that need HOME writable
         HOME = "${WORKSPACE}"
@@ -175,8 +175,8 @@ pipeline {
     failure {
       echo "❌ Build failed."
     }
-    always {
-      cleanWs(deleteDirs: true, disableDeferredWipeout: true)
-    }
+    // always {
+    //   cleanWs(deleteDirs: true, disableDeferredWipeout: true)
+    // }
   }
 }

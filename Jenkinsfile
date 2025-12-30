@@ -4,7 +4,7 @@ pipeline {
       // Docker CLI image (includes docker + compose plugin)
       image 'docker:24.0-cli'
       // Run as root to install tools; mount TLS certs and point to DinD
-      args '-u root:root -v /certs/client:/certs/client:ro -e DOCKER_HOST=tcp://dind:2376 -e DOCKER_CERT_PATH=/certs/client -e DOCKER_TLS_VERIFY=1'
+      args '-u root:root -v /certs:/certs:ro -e DOCKER_HOST=tcp://dind:2376 -e DOCKER_CERT_PATH=/certs/client -e DOCKER_TLS_VERIFY=1'
     }
   }
   stages {

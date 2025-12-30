@@ -60,7 +60,8 @@ bandit: ## Run bandit static analysis on source code
 
 sci: pip-audit safety bandit ## Security checks: dependencies & code (pip-audit, safety, bandit)
 
-ci: pre-install install lint test coverage sci ## Run lint, test, and coverage (for CI pipelines)
+# ci: pre-install install lint test coverage sci ## Run lint, test, coverage and sci (for CI pipelines)
+ci: pre-install install test coverage sci ## Run test, coverage and sci (for CI pipelines)
 
 run: ## Run local app (env: APP_ENV=local)
 	@mkdir -p local

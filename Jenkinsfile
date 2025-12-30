@@ -54,7 +54,7 @@ pipeline {
       agent {
         docker {
           image 'app101/jenkins-python-agent:latest'
-          // args '--user 1000:1000'
+          args '--user 1000:1000'
           reuseNode true
         }
       }
@@ -63,6 +63,10 @@ pipeline {
 
         sh '''
           set -euo pipefail
+
+          hostname || true
+          cat /etc/os-release || true
+          id || true
 
           # Run your Makefile CI (creates .venv and runs lint/test/coverage + security checks)
           make ci

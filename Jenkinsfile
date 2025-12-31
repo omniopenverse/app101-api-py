@@ -7,7 +7,6 @@ pipeline {
     disableConcurrentBuilds()
     timeout(time: 30, unit: 'MINUTES')
     buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '30'))
-    // skipDefaultCheckout(true)
     preserveStashes(buildCount: 10)
   }
 
@@ -17,9 +16,6 @@ pipeline {
   }
 
   environment {
-    // DinD daemon (your docker:dind service should be named "docker")
-    // DOCKER_HOST = 'tcp://dind:2375'
-    // DOCKER_TLS_CERTDIR = ''
     IMAGE_REPO = "${params.DOCKERHUB_NAMESPACE}/${params.IMAGE_NAME}"
   }
 
@@ -34,7 +30,6 @@ pipeline {
           env.GIT_TAG = sh(script: "git describe --tags --exact-match 2>/dev/null || true", returnStdout: true).trim()
           env.IMAGE_REPO = "${params.DOCKERHUB_NAMESPACE}/${params.IMAGE_NAME}"
         }
-        // stash name: 'src_files', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
       }
     }
 
@@ -54,23 +49,6 @@ pipeline {
         '''
       }
     }
-
-    // Optional: enable if you want linting in a dedicated stage
-    // stage('Lint') {
-    //   agent {
-    //     docker {
-    //       image 'app101/jenkins-python-agent:latest'
-    //       args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
-    //       reuseNode true
-    //     }
-    //   }
-    //   steps {
-    //     sh '''
-    //       set -euo pipefail
-    //       make lint
-    //     '''
-    //   }
-    // }
 
     stage('Test') {
       agent {
@@ -113,41 +91,111 @@ pipeline {
       }
     }
 
-    // ...
+    // stage('Lint') {
+    //   agent {
+    //     docker {
+    //       image 'app101/jenkins-python-agent:latest'
+    //       args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
+    //       reuseNode true
+    //     }
+    //   }
+    //   steps {
+    //     sh '''
+    //       set -euo pipefail
+    //       make lint
+    //     '''
+    //   }
+    // }
 
-    stage('Stash Sources') {
-      agent any
+    stage('Audit') {
+      agent {
+        docker {
+          image 'app101/jenkins-python-agent:latest'
+          args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
+          reuseNode true
+        }
+      }
       steps {
-        // Stash source for later Docker build stage
-        stash name: 'srcs', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
+        // workspace already populated by previous stage; rerun checkout if using different nodes
+        sh '''
+          set -euo pipefail
+          make pip-audit
+        '''
       }
     }
 
+    stage('Safety') {
+      agent {
+        docker {
+          image 'app101/jenkins-python-agent:latest'
+          args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
+          reuseNode true
+        }
+      }
+      steps {
+        // workspace already populated by previous stage; rerun checkout if using different nodes
+        sh '''
+          set -euo pipefail
+          make safety
+        '''
+      }
+    }
+
+    stage('Bandit') {
+      agent {
+        docker {
+          image 'app101/jenkins-python-agent:latest'
+          args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
+          reuseNode true
+        }
+      }
+      steps {
+        // workspace already populated by previous stage; rerun checkout if using different nodes
+        sh '''
+          set -euo pipefail
+          make bandit
+        '''
+      }
+    }
+
+    stage('Package') {
+      agent {
+        docker {
+          image 'app101/jenkins-python-agent:latest'
+          args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
+          reuseNode true
+        }
+      }
+      steps {
+        // workspace already populated by previous stage; rerun checkout if using different nodes
+        sh '''
+          set -euo pipefail
+          make package
+        '''
+      }
+    }
+
+    // ...
+
+    // stage('Stash Sources') {
+    //   agent any
+    //   steps {
+    //     // Stash source for later Docker build stage
+    //     stash name: 'srcs', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
+    //   }
+    // }
+
     stage('Docker Build & Push') {
-      // agent {
-      //   docker {
-      //     image 'app101/jenkins-agent:latest'
-      //     // Provide Docker daemon connectivity to dind over TLS and ensure network reachability
-      //     // Join the same Docker network as compose services so hostname "dind" resolves
-      //     args '--user root:root --privileged -e DOCKER_HOST=tcp://dind:2376 -e DOCKER_TLS_VERIFY=1 -e DOCKER_CERT_PATH=/certs/client -v /certs:/certs:ro'
-      //     reuseNode true
-      //   }
-      // }
       agent any
       // when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
       environment {
-        // helps some environments that need HOME writable
         HOME = "${WORKSPACE}"
       }
       steps {
-        unstash 'srcs'
+        // unstash 'srcs'
         // unstash 'dist'
 
         script {
-          // Tag strategy:
-          // - Always: sha-<shortsha>
-          // - main branch: latest
-          // - git tag builds: <tag>
           def tags = []
           tags << "sha-${env.GIT_SHA_SHORT}"
 
@@ -172,17 +220,10 @@ pipeline {
             bash -lc '
               set -euo pipefail
 
-              hostname || true
-              cat /etc/os-release || true
-              id || true
-              ls -la || true
-
               echo "DOCKER_HOST=${DOCKER_HOST:-}"
               echo "DOCKER_CERT_PATH=${DOCKER_CERT_PATH:-}"
               docker info || true
-
               echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
-
               # Build once, tag many
               docker build \
                 --pull \
@@ -190,19 +231,16 @@ pipeline {
                 --label "org.opencontainers.image.source=${GIT_URL:-unknown}" \
                 -t "${IMAGE_REPO}:sha-${GIT_SHA_SHORT}" \
                 .
-
               IFS="," read -r -a TAG_ARR <<< "${IMAGE_TAGS}"
               for t in "${TAG_ARR[@]}"; do
                 if [ "$t" != "sha-${GIT_SHA_SHORT}" ]; then
                   docker tag "${IMAGE_REPO}:sha-${GIT_SHA_SHORT}" "${IMAGE_REPO}:$t"
                 fi
               done
-
               # Push
               for t in "${TAG_ARR[@]}"; do
                 docker push "${IMAGE_REPO}:$t"
               done
-
               docker logout
             '
           '''
@@ -218,8 +256,8 @@ pipeline {
     failure {
       echo "❌ Build failed."
     }
-    // always {
-    //   cleanWs(deleteDirs: true, disableDeferredWipeout: true)
-    // }
+    always {
+      cleanWs(deleteDirs: true, disableDeferredWipeout: true)
+    }
   }
 }

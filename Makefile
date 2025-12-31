@@ -16,7 +16,7 @@ venv: ## Create local virtual environment at $(VENV_DIR)
 	@$(VENV_DIR)/bin/python -m pip install --upgrade pip setuptools wheel >/dev/null
 
 pre-install: venv ## Install minimal tooling from $(REQ_DEV) into venv
-	@$(VENV_DIR)/bin/pip install -r $(REQ_DEV)
+	$(VENV_DIR)/bin/pip install -r $(REQ_DEV)
 
 install: venv ## Install prod dependencies from $(REQ) into venv
 	@$(VENV_DIR)/bin/pip install -r $(REQ)
@@ -74,20 +74,20 @@ run: ## Run local app (env: APP_ENV=local)
 		$(VENV_DIR)/bin/python src/app.py
 
 docker-build: ## Build Docker images
-	docker compose build
+	@docker compose build
 
 docker-up: ## Start services with docker compose
-	docker compose up -d
+	@docker compose up -d
 
 docker-down: ## Stop services and remove volumes
-	docker compose down -v
+	@docker compose down -v
 
 docker-logs: ## Tail docker compose logs
-	docker compose logs -f --tail=200
+	@docker compose logs -f --tail=200
 
 clean: ## Remove caches, coverage, local DB
-	rm -rf htmlcov .pytest_cache local src/db.sqlite3 .coverage .mypy_cache .ruff_cache
-	find . -type d -name "__pycache__" -exec rm -rf {} +
+	rm -rf htmlcov .pytest_cache local src/db.sqlite3 .coverage .mypy_cache .ruff_cache dist
+	@find . -type d -name "__pycache__" -exec rm -rf {} +
 
 fclean: clean ## Clean + remove venv
 	rm -rf .venv

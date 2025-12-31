@@ -175,16 +175,6 @@ pipeline {
       }
     }
 
-    // ...
-
-    // stage('Stash Sources') {
-    //   agent any
-    //   steps {
-    //     // Stash source for later Docker build stage
-    //     stash name: 'srcs', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
-    //   }
-    // }
-
     stage('Docker Build & Push') {
       agent any
       // when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
@@ -192,8 +182,6 @@ pipeline {
         HOME = "${WORKSPACE}"
       }
       steps {
-        // unstash 'srcs'
-        // unstash 'dist'
 
         script {
           def tags = []

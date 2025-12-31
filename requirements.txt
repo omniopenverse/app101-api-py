@@ -5,4 +5,3 @@ flasgger==0.9.7.1
 prometheus_flask_exporter==0.23.2
 psycopg2-binary==2.9.10
 flask-cors==6.0.0
-pytest==8.4.0

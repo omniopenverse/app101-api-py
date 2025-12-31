@@ -34,12 +34,11 @@ pipeline {
           env.GIT_TAG = sh(script: "git describe --tags --exact-match 2>/dev/null || true", returnStdout: true).trim()
           env.IMAGE_REPO = "${params.DOCKERHUB_NAMESPACE}/${params.IMAGE_NAME}"
         }
-
-        stash name: 'src_files', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
+        // stash name: 'src_files', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
       }
     }
 
-    stage('CI: lint/test/coverage/security') {
+    stage('Install') {
       agent {
         docker {
           image 'app101/jenkins-python-agent:latest'
@@ -47,52 +46,63 @@ pipeline {
           reuseNode true
         }
       }
-      unstash 'src_files'
-      stages {
-        stage('Install') {
-          steps {
-            sh '''
-              set -euo pipefail
-              make pre-install
-              make install
-            '''
-          }
+      steps {
+        sh '''
+          set -euo pipefail
+          make pre-install
+          make install
+        '''
+      }
+    }
+
+    // Optional: enable if you want linting in a dedicated stage
+    // stage('Lint') {
+    //   agent {
+    //     docker {
+    //       image 'app101/jenkins-python-agent:latest'
+    //       args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
+    //       reuseNode true
+    //     }
+    //   }
+    //   steps {
+    //     sh '''
+    //       set -euo pipefail
+    //       make lint
+    //     '''
+    //   }
+    // }
+
+    stage('Test') {
+      agent {
+        docker {
+          image 'app101/jenkins-python-agent:latest'
+          args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
+          reuseNode true
         }
-        stage('test') {
-          steps {
-            sh '''
-              set -euo pipefail
-              make test
-            '''
-          }
+      }
+      steps {
+        // workspace already populated by previous stage; rerun checkout if using different nodes
+        sh '''
+          set -euo pipefail
+          make test
+        '''
+      }
+    }
+
+    stage('Coverage') {
+      agent {
+        docker {
+          image 'app101/jenkins-python-agent:latest'
+          args '--user 1000:1000 -v /workspace:/home/ciuser/workspace --workdir /home/ciuser/workspace'
+          reuseNode true
         }
-        // stage('lint') {
-        //   steps {
-        //     sh '''
-        //       set -euo pipefail
-        //       make lint
-        //     '''
-        //   }
-        // }
-        stage('coverage') {
-          steps {
-            sh '''
-              set -euo pipefail
-              make coverage
-              make coverage-html
-            '''
-          }
-        }
-        // stage('Package & Stash') {
-        //   steps {
-        //     // Archive built python packages in Jenkins
-        //     archiveArtifacts artifacts: 'dist/*', fingerprint: true, onlyIfSuccessful: true
-        //     // // Stash dist artifacts for image build stage (optional, but useful)
-        //     // stash name: 'dist', includes: 'dist/*', allowEmpty: true
-        //     // Stash source for later containerized stages
-        //     stash name: 'srcs', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
-        //   }
-        // }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+          make coverage
+          make coverage-html
+        '''
       }
       post {
         always {
@@ -100,6 +110,16 @@ pipeline {
           // junit allowEmptyResults: true, testResults: '**/junit*.xml'
           sh 'ls -la || true'
         }
+      }
+    }
+
+    // ...
+
+    stage('Stash Sources') {
+      agent any
+      steps {
+        // Stash source for later Docker build stage
+        stash name: 'srcs', includes: '**/*', excludes: '**/.git/**', useDefaultExcludes: false
       }
     }
 
@@ -113,7 +133,7 @@ pipeline {
       //     reuseNode true
       //   }
       // }
-      agent { label 'docker' }
+      agent any
       // when { anyOf { branch 'main'; branch 'arsene'; buildingTag() } }
       environment {
         // helps some environments that need HOME writable
